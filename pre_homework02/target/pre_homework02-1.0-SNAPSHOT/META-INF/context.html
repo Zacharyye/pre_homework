@@ -22,6 +22,9 @@
               maxActive="100" maxIdle="30" maxWait="10000"
               username="root" password="root"
               driverClassName="com.mysql.jdbc.Driver"
-              url="jdbc:mysql://1.116.154.131:3306/zachary"/>
+              url="jdbc:mysql://1.116.154.131:3306/zachary"></Resource>
 
+    <Resource name="jdbc/DBConnectionManager" auth="Container"
+              type="com.zachary.pre_homework02.standard.sql.DBConnectionManager"
+              factory="org.apache.naming.factory.BeanFactory"/>
 </Context>

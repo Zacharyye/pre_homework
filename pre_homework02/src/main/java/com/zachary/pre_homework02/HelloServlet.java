@@ -1,5 +1,8 @@
 package com.zachary.pre_homework02;
 
+import com.zachary.pre_homework02.context.ClassicComponentContext;
+import com.zachary.pre_homework02.standard.sql.DBConnectionManager;
+
 import java.io.*;
 import java.sql.*;
 import javax.annotation.Resource;
@@ -11,13 +14,19 @@ import javax.sql.DataSource;
 public class HelloServlet extends HttpServlet {
   private String message;
 
+  private DBConnectionManager dbConnectionManager;
+
   @Resource(name="jdbc/UserPlatformDataSource")
   private DataSource dataSource;
 
   @Override
   public void init() {
     message = "Hello World!";
+    ClassicComponentContext context = new ClassicComponentContext();
+    context.init(this.getServletContext());
+    dbConnectionManager = ClassicComponentContext.getInstance().getComponent("jdbc/DBConnectionManager");
   }
+
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -30,7 +39,8 @@ public class HelloServlet extends HttpServlet {
 
     try {
       System.out.println(dataSource);
-      conn = dataSource.getConnection();
+      conn = dbConnectionManager.getConnection();
+      System.out.println(conn);
       Class.forName("com.mysql.jdbc.Driver");
       conn = DriverManager.getConnection("jdbc:mysql://1.116.154.131:3306/zachary","root", "root");
       stmt = conn.createStatement();
@@ -40,7 +50,9 @@ public class HelloServlet extends HttpServlet {
       e.printStackTrace();
     } finally {
       try {
-        conn.close();
+        if(conn != null) {
+          conn.close();
+        }
       } catch (SQLException throwables) {
         throwables.printStackTrace();
       }
