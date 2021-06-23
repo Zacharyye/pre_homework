@@ -2,7 +2,7 @@
 
 > 本地版本 `tomcat-8.5.63`
 
-##### (1) shutdown.sh脚本
+#### (1) shutdown.sh脚本
 
 ```shell
 #!/bin/sh
@@ -435,4 +435,163 @@ elif [ "$1" = "stop" ] ; then
     fi
   fi
 ```
+
+#### (3) 执行stop 指令 `org.apache.catalina.startup.Bootstrap "$@" stop`
+
+```java
+# main 方法中根据参数进行方法调用
+...
+else if (command.equals("stop")) {
+        daemon.stopServer(args);
+} 
+...
+  
+# stopServer 方法
+# this.catalinaDaemon.getClass() => org.apache.catalina.startup.Catalina
+ public void stopServer(String[] arguments) throws Exception {
+  Object[] param;
+  Class[] paramTypes;
+  if (arguments != null && arguments.length != 0) {
+    paramTypes = new Class[]{arguments.getClass()};
+    param = new Object[]{arguments};
+  } else {
+    paramTypes = null;
+    param = null;
+  }
+
+  Method method = this.catalinaDaemon.getClass().getMethod("stopServer", paramTypes);
+  method.invoke(this.catalinaDaemon, param);
+}
+
+# org.apache.catalina.startup.Catalina#stopServer()
+public void stopServer(String[] arguments) {
+    # 入参赋值
+    if (arguments != null) {
+      this.arguments(arguments);
+    }
+		
+  	# 获取服务实例
+    Server s = this.getServer();
+    if (s == null) {
+      # 创建汇编器
+      Digester digester = this.createStopDigester();
+      
+      # 获取配置文件
+      File file = this.configFile();
+
+      Throwable var6;
+      try {
+        FileInputStream fis = new FileInputStream(file);
+        var6 = null;
+
+        try {
+          InputSource is = new InputSource(file.toURI().toURL().toString());
+          is.setByteStream(fis);
+          digester.push(this);
+          digester.parse(is);
+        } catch (Throwable var62) {
+          var6 = var62;
+          throw var62;
+        } finally {
+          if (fis != null) {
+            if (var6 != null) {
+              try {
+                fis.close();
+              } catch (Throwable var61) {
+                var6.addSuppressed(var61);
+              }
+            } else {
+              fis.close();
+            }
+          }
+
+        }
+      } catch (Exception var71) {
+        log.error("Catalina.stop: ", var71);
+        System.exit(1);
+      }
+		
+      s = this.getServer();
+      if (s.getPort() > 0) {
+        try {
+          # 连接端口
+          Socket socket = new Socket(s.getAddress(), s.getPort());
+          Throwable var73 = null;
+
+          try {
+            # 获取输出流
+            OutputStream stream = socket.getOutputStream();
+            var6 = null;
+
+            try {
+              # 获取 SHUTDOWN 指令
+              String shutdown = s.getShutdown();
+							
+              # 写指令
+              for(int i = 0; i < shutdown.length(); ++i) {
+                stream.write(shutdown.charAt(i));
+              }
+
+              stream.flush();
+            } catch (Throwable var64) {
+              var6 = var64;
+              throw var64;
+            } finally {
+              if (stream != null) {
+                if (var6 != null) {
+                  try {
+                    stream.close();
+                  } catch (Throwable var60) {
+                    var6.addSuppressed(var60);
+                  }
+                } else {
+                  stream.close();
+                }
+              }
+
+            }
+          } catch (Throwable var66) {
+            var73 = var66;
+            throw var66;
+          } finally {
+            if (socket != null) {
+              if (var73 != null) {
+                try {
+                  socket.close();
+                } catch (Throwable var59) {
+                  var73.addSuppressed(var59);
+                }
+              } else {
+                socket.close();
+              }
+            }
+
+          }
+        } catch (ConnectException var68) {
+          log.error(sm.getString("catalina.stopServer.connectException", new Object[]{s.getAddress(), String.valueOf(s.getPort())}));
+          log.error("Catalina.stop: ", var68);
+          System.exit(1);
+        } catch (IOException var69) {
+          log.error("Catalina.stop: ", var69);
+          System.exit(1);
+        }
+      } else {
+        log.error(sm.getString("catalina.stopServer"));
+        System.exit(1);
+      }
+
+    } else {
+      try {
+        # 服务停止 + 销毁
+        s.stop();
+        s.destroy();
+      } catch (LifecycleException var63) {
+        log.error("Catalina.stop: ", var63);
+      }
+
+    }
+  }
+```
+
+
 
