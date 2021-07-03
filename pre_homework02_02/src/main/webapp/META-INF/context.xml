@@ -22,6 +22,6 @@
               maxActive="100" maxIdle="30" maxWait="10000"
               username="root" password="root"
               driverClassName="com.mysql.jdbc.Driver"
-              url="jdbc:mysql://1.116.154.131:3306/zachary"></Resource>
+              url="jdbc:mysql://1.116.154.131:3306/zachary"/>
 
 </Context>
